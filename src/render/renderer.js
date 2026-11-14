@@ -103,8 +103,8 @@ export function createRenderer(canvas) {
   const hpTex = new THREE.CanvasTexture(hpCanvas);
   hpTex.colorSpace = THREE.SRGBColorSpace;
   const hpSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: hpTex, transparent: true, fog: false, depthTest: false }));
-  hpSprite.scale.set(5, 1.25, 1);
-  hpSprite.position.set(0, towerH + 1.1, CFG.lane.towerZ + 1);
+  hpSprite.scale.set(7, 1.75, 1);
+  hpSprite.position.set(0, towerH + 1.4, CFG.lane.towerZ + 1);
   hpSprite.renderOrder = 10;
   scene.add(hpSprite);
   let hpLast = -1, hpMaxLast = -1, hpDrawT = -1;
@@ -221,7 +221,7 @@ export function createRenderer(canvas) {
       const p = Math.min(1, t / 1.0);
       const e = p * p;
       const dir = i % 2 ? 1 : -1;
-      const sink = t > 1 ? (t - 1) * 0.5 : 0;
+      const sink = t > 1 ? Math.min(0.9, (t - 1) * 0.5) : 0;
       s.position.x = b.x + dir * e * (1.5 + (n - i) * 0.4);
       s.position.y = b.y * (1 - e * 0.85) - e * 0.3 - sink;
       s.position.z = b.z + e * 1.2;
