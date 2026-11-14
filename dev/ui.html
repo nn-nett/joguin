@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Auvalanche! — dev UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@700;800&display=swap">
+  <link rel="stylesheet" href="../styles/ui.css">
+  <style>
+    /* fundo falso no lugar do 3D */
+    body { background: linear-gradient(#6EC6FF 0%, #BEE9FF 45%, #7ED957 46%, #7ED957 100%); }
+    #game-canvas { opacity: 0; }
+    .lane { position: fixed; left: 50%; bottom: 0; width: 60vmin; height: 55%; transform: translateX(-50%); background: #FFE8B8; clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); }
+  </style>
+</head>
+<body>
+  <div class="lane"></div>
+  <canvas id="game-canvas"></canvas>
+  <div id="ui-root"></div>
+  <script type="module">
+    import { createUI } from '../src/ui/ui.js';
+    import { createInput } from '../src/input.js';
+
+    const q = new URLSearchParams(location.search);
+    const log = [];
+    window.__log = log;
+    const items = [
+      { id: 'fireRate', name: 'Cadência', desc: 'Mais filhotes por segundo', level: 3, maxLevel: 10, cost: 120, canAfford: true, valueText: '7.1 filhotes/s' },
+      { id: 'super', name: 'Dogão', desc: 'Carrega mais rápido e bate mais forte', level: 0, maxLevel: 10, cost: 50, canAfford: true, valueText: '50 pts · 40 de força' },
+      { id: 'baseHp', name: 'Casinha', desc: 'Mais vida para a sua base', level: 10, maxLevel: 10, cost: null, canAfford: false, valueText: '30 de vida' },
+    ];
+    items[0].canAfford = false;
+    let muted = false;
+    const ui = createUI(document.getElementById('ui-root'), {
+      onPlay: () => { log.push('play'); ui.showScreen('hud', {}); },
+      onOpenUpgrades: () => { log.push('upgrades'); ui.showScreen('upgrades', { coins: 130, nextLevel: 2, items }); },
+      onSuper: () => { log.push('super'); ui.toast('Dogão pronto!', 'good'); },
+      onToggleMute: () => { muted = !muted; ui.setMuted(muted); log.push('mute'); },
+      onBuyUpgrade: (id) => { log.push('buy:' + id); },
+      onNext: () => { log.push('next'); ui.showScreen('upgrades', { coins: 130, nextLevel: 2, items }); },
+      onRetry: () => { log.push('retry'); ui.showScreen('hud'); },
+    });
+    window.__ui = ui;
+    const input = createInput(document.getElementById('game-canvas'));
+    window.__input = input;
+
+    const isTouch = matchMedia('(pointer: coarse)').matches || q.get('touch') === '1';
+    const hudData = (t) => ({ level: 4, towerHp: Math.max(0, 522 - t * 20), towerMaxHp: 522, baseHp: 7, baseMaxHp: 14, puppies: 218, superFrac: Math.min(1, (t % 12) / 10), coins: 340 });
+    const screensData = {
+      start: () => ui.showScreen('start', { level: 4, coins: 340, best: 4, isTouch }),
+      hud: () => { ui.showScreen('hud'); ui.updateHud(hudData(5)); ui.setMuted(false); ui.toast('Lá vem a gataria!'); ui.toast('Cuidado com os portões vermelhos!', 'warn'); },
+      hudready: () => { ui.showScreen('hud'); ui.updateHud({ ...hudData(5), superFrac: 1 }); },
+      win: () => ui.showScreen('win', { level: 4, reward: 95, coins: 435 }),
+      lose: () => ui.showScreen('lose', { level: 4, reward: 11, coins: 351, pct: 63 }),
+      upgrades: () => ui.showScreen('upgrades', { coins: 130, nextLevel: 5, items }),
+    };
+
+    const only = q.get('screen');
+    if (only && screensData[only]) {
+      screensData[only]();
+      if (only === 'hud' || only === 'hudready') {
+        let t = 5;
+        setInterval(() => { t += 0.05; ui.updateHud(hudData(t)); }, 50);
+        if (only === 'hudready') setInterval(() => ui.toast('Dogão pronto!', 'good'), 3000);
+      }
+    } else {
+      const order = ['start', 'hud', 'win', 'lose', 'upgrades'];
+      let i = 0;
+      const next = () => { screensData[order[i % order.length]](); i++; };
+      next();
+      setInterval(next, 3500);
+    }
+  </script>
+</body>
+</html>
