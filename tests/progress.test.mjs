@@ -21,7 +21,7 @@ t('fase 1 é o tutorial', () => {
   assert.deepEqual(sig(a), ['mul2@-2.5', 'add3@2.5']);
   assert.deepEqual(sig(b), ['add5@-2.5', 'mul3@2.5']);
   assert.ok(d.rows.every((r) => r.gates.every((g) => g.moving === null)));
-  assert.equal(d.towerHp, 90);
+  assert.equal(d.towerHp, 180);
   assert.equal(d.cats.fatChance, 0);
 });
 
@@ -51,7 +51,7 @@ t('invariantes L=1..30', () => {
 });
 
 t('towerHp e cats', () => {
-  assert.deepEqual([1, 2, 3, 5, 10].map(towerHpFor), [90, 162, 258, 522, 1602]);
+  assert.deepEqual([1, 2, 3, 5, 10].map(towerHpFor), [180, 294, 436, 804, 2214]);
   const c = generateLevel(10).cats;
   assert.equal(c.rate, 5.5); assert.equal(c.burstSize, 62); assert.equal(c.ramp, 45);
   assert.equal(c.fatChance, 0.14);

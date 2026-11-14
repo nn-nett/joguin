@@ -60,8 +60,8 @@ export const CFG = {
 
   base: { hpBase: 10, hpPerLevel: 2 },
 
-  // hp(L) = 90 + 60·(L-1) + 12·(L-1)²
-  tower: { hpA: 90, hpB: 60, hpC: 12, height: 9 },
+  // hp(L) = 180 + 100·(L-1) + 14·(L-1)²  (F1 180, F5 804, F10 2214)
+  tower: { hpA: 180, hpB: 100, hpC: 14, height: 9 },
 
   superDog: {
     needBase: 50,
@@ -98,7 +98,7 @@ export const CFG = {
     moverOmegaMax: 2.0,
     addCooldown: 0.5,
     subRefill: 1.0,
-    maxMulProduct: 24,
+    maxMulProduct: 16,
     height: 2.2,
   },
 
@@ -115,7 +115,7 @@ export const CFG = {
 
   timing: { winDelay: 1.6, loseDelay: 1.2 },
 
-  render: { maxPixelRatio: 2, slowFrameMs: 22, slowWindow: 2, maxDrawCalls: 45 },
+  render: { maxPixelRatio: 2, slowFrameMs: 22, slowWindow: 2, maxDrawCalls: 50 },
 
   save: { key: 'auvalanche.save.v1' },
 

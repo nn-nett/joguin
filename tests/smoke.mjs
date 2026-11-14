@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdir } from 'node:fs/promises';
 import { startServer, launch, openPage } from './helpers.mjs';
+import { CFG } from '../src/config.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -316,7 +317,7 @@ try {
     await sleep(500);
     const info = await main.evaluate(() => window.__game.renderInfo());
     console.log(`      renderInfo: ${JSON.stringify(info)}`);
-    check(info && info.drawCalls <= 45, `drawCalls = ${info && info.drawCalls} (> 45)`);
+    check(info && info.drawCalls <= CFG.render.maxDrawCalls, `drawCalls = ${info && info.drawCalls} (> ${CFG.render.maxDrawCalls})`);
     await shot(main, '05-estresse-retrato.png');
     await main.evaluate(() => { window.__game.pauseLoop(true); window.__game.setInput({ targetX: 0, firing: false }); });
   });

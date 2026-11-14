@@ -420,7 +420,8 @@ export function createSim() {
       }
       if (shots > 0) emit({ type: 'fire', x: state.cannonX });
     } else {
-      fireAcc = 0;
+      // recarrega parado (máx. 1 tiro): o primeiro filhote sai na hora do toque
+      fireAcc = Math.min(1, fireAcc + fireRate * dt);
     }
 
     // 4. spawn de gatos
