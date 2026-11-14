@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>dev/render</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #BEE9FF; }
+    #game-canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
+    #hud { position: fixed; left: 6px; top: 6px; font: 12px monospace; color: #1B2A49; background: rgba(255,255,255,.6); padding: 2px 6px; border-radius: 6px; }
+  </style>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+              "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <div id="hud"></div>
+  <script type="module">
+    import { createRenderer } from '../src/render/renderer.js';
+    import { CFG } from '../src/config.js';
+
+    const params = new URLSearchParams(location.search);
+    const mode = params.get('mode') || 'play';
+    const canvas = document.getElementById('game-canvas');
+    const r = createRenderer(canvas);
+
+    const level = {
+      level: 3, seed: 1, towerHp: 258,
+      rows: [
+        { z: -12, gates: [
+          { x: -2.5, halfWidth: 2.3, op: 'mul', value: 2, moving: null },
+          { x: 2.5, halfWidth: 2.3, op: 'add', value: 3, moving: null } ] },
+        { z: -22, gates: [
+          { x: 0, halfWidth: 1.6, op: 'mul', value: 3, moving: { amp: 3, omega: 1.2, phase: 0 } } ] },
+        { z: -31, gates: [
+          { x: -2.5, halfWidth: 2.3, op: 'sub', value: 5, moving: null },
+          { x: 2.5, halfWidth: 2.3, op: 'mul', value: 2, moving: null } ] },
+      ],
+      cats: { rate: 2, ramp: 45, burstEvery: 12, burstSize: 20, speed: 3, fatChance: 0.05 },
+    };
+
+    const PC = CFG.puppy.cap, CC = CFG.cat.cap;
+    const st = {
+      status: 'playing', time: 0, level: 3, cannonX: 0, firing: true,
+      puppies: { count: 800, x: new Float32Array(PC), z: new Float32Array(PC), vx: new Float32Array(PC),
+                 phase: new Float32Array(PC), born: new Float32Array(PC), variant: new Uint8Array(PC), row: new Uint8Array(PC) },
+      cats: { count: 300, x: new Float32Array(CC), z: new Float32Array(CC), phase: new Float32Array(CC),
+              hp: new Uint8Array(CC), kind: new Uint8Array(CC) },
+      superDog: { active: params.has('dog'), x: 0, z: -20, power: 40 },
+      gates: [], tower: { hp: 200, maxHp: 258 }, base: { hp: 10, maxHp: 10 },
+      superPoints: 0, superNeed: 50, stats: {},
+    };
+    let id = 0;
+    for (const row of level.rows) for (const g of row.gates) {
+      st.gates.push({ id: id++, row: 0, z: row.z, x: g.x, halfWidth: g.halfWidth, op: g.op, value: g.value,
+        good: g.op === 'mul' || g.op === 'add', label: '', moving: g.moving, lastTrigger: -10 });
+    }
+    for (let i = 0; i < 800; i++) {
+      st.puppies.x[i] = (Math.random() * 2 - 1) * 4.3;
+      st.puppies.z[i] = -2 - Math.random() * 42;
+      st.puppies.phase[i] = Math.random() * 6.28;
+      st.puppies.born[i] = -10;
+      st.puppies.variant[i] = i & 3;
+    }
+    for (let i = 0; i < 300; i++) {
+      st.cats.x[i] = (Math.random() * 2 - 1) * 4.3;
+      st.cats.z[i] = -44 + Math.random() * 44;
+      st.cats.phase[i] = Math.random() * 6.28;
+      st.cats.hp[i] = 1;
+      st.cats.kind[i] = i % 25 === 0 ? 1 : 0;
+    }
+
+    r.buildLevel(level);
+    r.setMode(mode);
+    const hud = document.getElementById('hud');
+    function fit() { r.resize(canvas.clientWidth, canvas.clientHeight); }
+    window.addEventListener('resize', fit);
+    fit();
+
+    let prev = performance.now() / 1000, evT = 0, frames = 0;
+    function frame() {
+      const now = performance.now() / 1000;
+      const dt = now - prev; prev = now;
+      st.time += dt;
+      st.cannonX = Math.sin(st.time * 0.8) * 3;
+      for (let i = 0; i < st.puppies.count; i++) {
+        st.puppies.z[i] -= 9 * dt;
+        if (st.puppies.z[i] < -45) { st.puppies.z[i] = -2; st.puppies.born[i] = st.time; }
+      }
+      for (let i = 0; i < st.cats.count; i++) {
+        st.cats.z[i] += (st.cats.kind[i] ? 1.6 : 3) * dt;
+        if (st.cats.z[i] > 0.8) st.cats.z[i] = -44;
+      }
+      for (const g of st.gates) if (g.moving) g.x = g.moving.amp * Math.sin(g.moving.omega * st.time + g.moving.phase);
+      if (st.superDog.active) { st.superDog.z -= 7 * dt; if (st.superDog.z < -44) st.superDog.z = 0; }
+      evT -= dt;
+      if (evT <= 0) {
+        evT = 0.25;
+        const ev = [{ type: 'fire', x: st.cannonX }, { type: 'towerHit', n: 3 }];
+        for (let k = 0; k < 6; k++) ev.push({ type: 'clash', x: (Math.random() * 2 - 1) * 4, z: -10 - Math.random() * 25, kind: k === 0 ? 1 : 0 });
+        const g = st.gates[(Math.random() * st.gates.length) | 0];
+        g.lastTrigger = st.time;
+        ev.push({ type: 'gate', gateId: g.id, good: g.good, x: g.x, z: g.z, n: 2 });
+        r.handleEvents(ev);
+      }
+      r.sync(st, now, dt);
+      r.render();
+      frames++;
+      if (frames % 20 === 0) { const i = r.info(); hud.textContent = `${i.drawCalls} calls · ${i.triangles} tris · pr ${i.pixelRatio}`; }
+      window.__info = r.info();
+      requestAnimationFrame(frame);
+    }
+    window.__renderer = r;
+    window.__ready = true;
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
