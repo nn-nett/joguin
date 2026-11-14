@@ -367,7 +367,7 @@ canvas {
   font: 800 clamp(36px, 11vw, 52px)/1 var(--auv-font-title);
 }
 .auv-end-title.auv-outline { color: #FFE14D; }
-.auv-end--lose .auv-end-title.auv-outline { color: #fff; }
+.auv-end--lose .auv-end-title.auv-outline { color: #FF6B5E; }
 .auv-end-text { margin: 0; color: var(--auv-navy); font: 800 18px/1.3 var(--auv-font-body); }
 .auv-reward {
   display: inline-flex; align-items: center; gap: 8px;
@@ -376,7 +376,7 @@ canvas {
   font: 800 28px/1 var(--auv-font-title);
 }
 .auv-reward .auv-coin { width: 28px; height: 28px; }
-.auv-end-actions { display: flex; flex-direction: column; gap: 14px; width: 100%; margin-top: 8px; align-items: center; }
+.auv-end-actions { display: flex; flex-direction: column; gap: 20px; width: 100%; margin-top: 8px; align-items: center; }
 .auv-end-actions .auv-btn { width: 100%; }
 .auv-end-actions .auv-btn--ghost { width: 80%; }
 .auv-end-emoji { font-size: 0; }
